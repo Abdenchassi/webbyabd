@@ -71,7 +71,7 @@ const PORTFOLIO = [
     type: 'Photography Marketplace',
     desc: 'A full platform connecting photographers with clients across Lebanon — portfolio browsing, city/event filtering, booking with Whish & OMT deposits.',
     url: 'https://lebnslb.onrender.com',
-    screenshot: '/screenshots/lenslb.svg',
+    screenshot: '/screenshots/lenslb.png',
     tags: ['Marketplace', 'Booking', 'Payments', 'Multi-language'],
   },
   {
@@ -79,7 +79,7 @@ const PORTFOLIO = [
     type: 'Photography Booking',
     desc: 'Session reservation system for a photography studio — indoor/outdoor selection, packages, video add-ons, WhatsApp integration.',
     url: 'https://noonphotoo.onrender.com',
-    screenshot: '/screenshots/noonphotoo.svg',
+    screenshot: '/screenshots/noonphotoo.png',
     tags: ['Booking', 'Studio', 'Mobile-First'],
   },
   {
@@ -87,7 +87,7 @@ const PORTFOLIO = [
     type: 'Baby E-Commerce Store',
     desc: 'Online shop for baby clothing — product catalog with categories, cart, shipping flow, and a full admin panel for inventory management.',
     url: 'https://halftheway.onrender.com',
-    screenshot: '/screenshots/halftheway.svg',
+    screenshot: '/screenshots/halftheway.png',
     tags: ['E-Commerce', 'Cart', 'Admin Panel'],
   },
   {
@@ -158,7 +158,7 @@ export default function Home() {
   // Countdown timer — 3 days from first load
   useEffect(() => {
     const TARGET = new Date();
-    TARGET.setDate(TARGET.getDate() + 3);
+    TARGET.setDate(TARGET.getDate() + 7);
     TARGET.setHours(0, 0, 0, 0);
     const tick = () => {
       const diff = TARGET.getTime() - Date.now();
