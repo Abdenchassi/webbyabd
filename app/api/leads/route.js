@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '../../lib/supabase';
 import { addLead } from '../../lib/store';
-
+ 
 export async function POST(request) {
   try {
     const body = await request.json();
@@ -9,7 +9,7 @@ export async function POST(request) {
     if (!client_name || !email_phone) {
       return NextResponse.json({ success: false, error: 'Name and contact info are required.' }, { status: 400 });
     }
-
+ 
     // Try Supabase first
     try {
       const { data, error } = await supabase.from('leads').insert([{
