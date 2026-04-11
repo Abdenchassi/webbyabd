@@ -1,6 +1,6 @@
 'use client';
 import { useState, useRef, useEffect } from 'react';
-
+ 
 /* ── Feature contract (cost hidden from user, sent to admin only) ── */
 const CONTRACT_DATA = [
   { category: 'Core Website Infrastructure', cost: 150, items: [
@@ -63,7 +63,7 @@ const CONTRACT_DATA = [
     { id: 'p6', label: 'Multi-currency display (USD / LBP)' },
   ]},
 ];
-
+ 
 /* ── Portfolio ── */
 const PORTFOLIO = [
   {
@@ -99,7 +99,7 @@ const PORTFOLIO = [
     tags: ['Events', 'Reservation', 'Multi-service'],
   },
 ];
-
+ 
 /* ── Services ── */
 const servData = [
   { title: 'Lightning-Fast Websites', desc: 'Mobile-first, SEO-optimized sites that load instantly and look stunning on every screen size.' },
@@ -109,7 +109,7 @@ const servData = [
   { title: 'Booking Systems', desc: 'Let clients book appointments, reserve tables, or schedule sessions with automatic reminders.' },
   { title: 'Payment Integration', desc: 'Accept Whish, OMT, or card payments. Generate invoices and receipts automatically.' },
 ];
-
+ 
 /* ── Icons ── */
 const CatIcon = ({ type }) => {
   const p = { width:20, height:20, fill:'none', stroke:'#1A56DB', strokeWidth:2, strokeLinecap:'round', strokeLinejoin:'round' };
@@ -123,7 +123,7 @@ const CatIcon = ({ type }) => {
   ];
   return icons[type] || null;
 };
-
+ 
 const ServIcon = ({ type }) => {
   const p = { width:24, height:24, fill:'none', stroke:'#1A56DB', strokeWidth:2, strokeLinecap:'round', strokeLinejoin:'round' };
   const icons = [
@@ -136,13 +136,13 @@ const ServIcon = ({ type }) => {
   ];
   return icons[type] || null;
 };
-
+ 
 const ExtIcon = () => (
   <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
     <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/>
   </svg>
 );
-
+ 
 /* ── Main ── */
 export default function Home() {
   const [sel, setSel] = useState({});
@@ -154,7 +154,7 @@ export default function Home() {
   const [countdown, setCountdown] = useState(null);
   const builderRef = useRef(null);
   const fileRef = useRef(null);
-
+ 
   // Countdown timer — 3 days from first load
   useEffect(() => {
     const TARGET = new Date();
@@ -173,36 +173,36 @@ export default function Home() {
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
   }, []);
-
+ 
   const toggle = (ci, fi) => {
     setSel(p => {
       const cat = p[ci] || {};
       return { ...p, [ci]: { ...cat, [fi]: !cat[fi] } };
     });
   };
-
+ 
   // Compute estimate (for submission only — not shown to user)
   let estimate = 0;
   Object.keys(sel).forEach(i => {
     if (Object.values(sel[i]).some(v => v)) estimate += CONTRACT_DATA[i].cost;
   });
   const totalSel = Object.values(sel).reduce((s, c) => s + Object.values(c).filter(Boolean).length, 0);
-
+ 
   const handleSubmit = async () => {
     if (!form.name || !form.contact || totalSel === 0) return;
     setSubmitting(true);
-
+ 
     const featuresList = [];
     CONTRACT_DATA.forEach((cat, i) => {
       cat.items.forEach(item => {
         if (sel[i] && sel[i][item.id]) featuresList.push(item.label);
       });
     });
-
+ 
     const files = fileRef.current?.files;
     let fileNames = '';
     if (files && files.length > 0) fileNames = Array.from(files).map(f => f.name).join(', ');
-
+ 
     try {
       const res = await fetch('/api/leads', {
         method: 'POST',
@@ -224,13 +224,13 @@ export default function Home() {
     } catch { alert('Network error. Please try again.'); }
     setSubmitting(false);
   };
-
+ 
   const scrollToBuilder = () => {
     setShowBuilder(true);
     setMenuOpen(false);
     setTimeout(() => builderRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
   };
-
+ 
   if (submitted) {
     return (
       <>
@@ -248,11 +248,11 @@ export default function Home() {
       </>
     );
   }
-
+ 
   return (
     <>
       <style>{cssText}</style>
-
+ 
       {/* ── NAV ── */}
       <nav className="nav">
         <div className="nav-inner">
@@ -271,7 +271,7 @@ export default function Home() {
           </button>
         </div>
       </nav>
-
+ 
       {/* ── HERO ── */}
       <section className="hero">
         <div className="hero-bg"><div className="grid-overlay" /><div className="glow-orb orb1" /><div className="glow-orb orb2" /></div>
@@ -308,7 +308,7 @@ export default function Home() {
           </div>
         </div>
       </section>
-
+ 
       {/* ── PORTFOLIO ── */}
       <section id="work" className="section">
         <div className="section-inner">
@@ -341,7 +341,7 @@ export default function Home() {
           </div>
         </div>
       </section>
-
+ 
       {/* ── SERVICES ── */}
       <section id="services" className="section section-alt">
         <div className="section-inner">
@@ -358,7 +358,7 @@ export default function Home() {
           </div>
         </div>
       </section>
-
+ 
       {/* ── COUNTDOWN CTA ── */}
       {!showBuilder && (
         <section className="countdown-section">
@@ -373,7 +373,7 @@ export default function Home() {
             </div>
             <h2 className="countdown-title">Limited spots — launching soon</h2>
             <p className="countdown-sub">Be among the first businesses to get a custom-built platform. Reserve your spot before the timer runs out.</p>
-
+ 
             {countdown && (
               <div className="countdown-timer">
                 <div className="countdown-unit">
@@ -398,7 +398,7 @@ export default function Home() {
                 </div>
               </div>
             )}
-
+ 
             <div className="countdown-ctas">
               <button className="btn-primary countdown-btn-main" onClick={scrollToBuilder}>
                 Get Started Now
@@ -412,7 +412,7 @@ export default function Home() {
           </div>
         </section>
       )}
-
+ 
       {/* ── BUILDER ── */}
       {showBuilder && (
         <section ref={builderRef} className="builder-section">
@@ -420,7 +420,7 @@ export default function Home() {
             <div className="section-label">Project Builder</div>
             <h2 className="section-title">Tell us what you need</h2>
             <p className="builder-sub">Select every feature that applies. We'll review your selection and get back with a tailored proposal and quote.</p>
-
+ 
             {/* Details */}
             <div className="builder-card">
               <h3 className="builder-card-title">Your Details</h3>
@@ -447,7 +447,7 @@ export default function Home() {
                 <textarea className="input textarea" value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} placeholder="Design style, target audience, deadline, reference sites..." />
               </div>
             </div>
-
+ 
             {/* Feature categories — NO price shown */}
             {CONTRACT_DATA.map((cat, ci) => (
               <div key={ci} className="builder-card">
@@ -471,7 +471,7 @@ export default function Home() {
               </div>
             ))}
           </div>
-
+ 
           {/* Sticky footer — shows count only, no price */}
           <div className="sticky-footer">
             <div className="sticky-inner">
@@ -486,7 +486,7 @@ export default function Home() {
           </div>
         </section>
       )}
-
+ 
       {/* ── FOOTER ── */}
       <footer className="footer">
         <div className="footer-content">
@@ -500,7 +500,7 @@ export default function Home() {
     </>
   );
 }
-
+ 
 /* ═══════════════════════════════════════════════════════════════
    CSS — mobile-first, scales up at 640px and 1024px
    ═══════════════════════════════════════════════════════════════ */
@@ -509,7 +509,7 @@ const cssText = `
 @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
 @keyframes pulse{0%,100%{opacity:.4}50%{opacity:1}}
 .anim-up{opacity:0;animation:fadeUp .7s ease forwards}
-
+ 
 /* NAV */
 .nav{position:fixed;top:0;left:0;right:0;z-index:999;background:rgba(255,255,255,.92);backdrop-filter:blur(16px);border-bottom:1px solid #E2E8F0}
 .nav-inner{max-width:1100px;margin:0 auto;padding:.75rem 1rem;display:flex;justify-content:space-between;align-items:center}
@@ -525,7 +525,7 @@ const cssText = `
 .ham-line.open:nth-child(1){transform:translateY(7px) rotate(45deg)}
 .ham-line.open:nth-child(2){opacity:0}
 .ham-line.open:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
-
+ 
 /* HERO */
 .hero{position:relative;padding:6.5rem 1.25rem 3.5rem;overflow:hidden;background:#fff}
 .hero-bg{position:absolute;inset:0;z-index:0}
@@ -540,12 +540,12 @@ const cssText = `
 .hero-grad{background:linear-gradient(135deg,#1A56DB,#3B82F6);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
 .hero-sub{font-size:1rem;color:#64748B;line-height:1.7;margin:0 auto 2rem;max-width:500px}
 .hero-ctas{display:flex;flex-direction:column;gap:12px;align-items:center}
-
+ 
 /* Value props */
 .value-row{display:flex;justify-content:center;align-items:center;gap:16px;margin-top:2.5rem;flex-wrap:wrap}
 .value-item{display:flex;align-items:center;gap:8px;font-size:.85rem;font-weight:600;color:#334155}
 .value-sep{width:1px;height:20px;background:#E2E8F0}
-
+ 
 /* Buttons */
 .btn-primary{background:#1A56DB;color:#fff;border:none;padding:.85rem 2rem;border-radius:8px;font-weight:600;font-size:1rem;cursor:pointer;font-family:'DM Sans';box-shadow:0 4px 14px rgba(26,86,219,.25);transition:all .25s ease;min-height:48px;width:100%}
 .btn-primary:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(26,86,219,.3)}
@@ -555,26 +555,26 @@ const cssText = `
 .btn-primary-white{background:#fff;color:#1A56DB;border:none;padding:.85rem 2rem;border-radius:8px;font-weight:600;font-size:1rem;cursor:pointer;font-family:'DM Sans';box-shadow:0 4px 14px rgba(0,0,0,.15);transition:all .25s ease;min-height:48px}
 .btn-primary-white:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(0,0,0,.2)}
 .full-w{width:100%}
-
+ 
 /* SECTIONS */
 .section{padding:4rem 1.25rem}
 .section-alt{background:#F1F5F9}
 .section-inner{max-width:1100px;margin:0 auto}
 .section-label{font-size:.75rem;font-weight:600;color:#1A56DB;text-transform:uppercase;letter-spacing:.1em;text-align:center;margin-bottom:10px}
 .section-title{font-family:'Outfit';font-size:1.6rem;font-weight:700;text-align:center;margin-bottom:2rem;letter-spacing:-.02em;color:#0F172A}
-
+ 
 /* PORTFOLIO */
 .port-grid{display:grid;grid-template-columns:1fr;gap:24px}
 .port-card{display:block;text-decoration:none;color:inherit;background:#fff;border-radius:16px;overflow:hidden;border:1px solid #E2E8F0;box-shadow:0 2px 8px rgba(0,0,0,.04);transition:all .35s ease}
 .port-card:hover{transform:translateY(-6px);box-shadow:0 20px 50px rgba(0,0,0,.1);border-color:#CBD5E1}
-
+ 
 .port-screenshot-wrap{position:relative;overflow:hidden;background:#F1F5F9;aspect-ratio:16/10}
 .port-screenshot{width:100%;height:100%;object-fit:cover;display:block;transition:transform .4s ease}
 .port-card:hover .port-screenshot{transform:scale(1.03)}
 .port-overlay{position:absolute;inset:0;background:rgba(15,23,42,.6);display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .3s ease}
 .port-card:hover .port-overlay{opacity:1}
 .port-visit{display:inline-flex;align-items:center;gap:8px;background:#fff;color:#0F172A;padding:.6rem 1.2rem;border-radius:8px;font-weight:600;font-size:.85rem}
-
+ 
 .port-info{padding:18px 20px 22px}
 .port-info-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
 .port-name{font-family:'Outfit';font-size:1.1rem;font-weight:700;color:#0F172A;margin-bottom:2px}
@@ -584,7 +584,7 @@ const cssText = `
 .port-desc{color:#64748B;font-size:.88rem;line-height:1.55;margin-bottom:14px}
 .port-tags{display:flex;flex-wrap:wrap;gap:6px}
 .port-tag{font-size:.72rem;font-weight:600;color:#1A56DB;background:#E0E7FF;padding:3px 10px;border-radius:100px}
-
+ 
 /* SERVICES */
 .serv-grid{display:grid;grid-template-columns:1fr;gap:14px}
 .serv-card{background:#fff;border-radius:14px;padding:22px;border:1px solid #E2E8F0;box-shadow:0 1px 3px rgba(0,0,0,.04);transition:all .3s ease}
@@ -592,7 +592,7 @@ const cssText = `
 .serv-icon-wrap{width:44px;height:44px;border-radius:10px;background:#E0E7FF;display:flex;align-items:center;justify-content:center;margin-bottom:14px}
 .serv-title{font-family:'Outfit';font-size:1.05rem;font-weight:700;margin-bottom:8px;color:#0F172A}
 .serv-desc{color:#64748B;font-size:.9rem;line-height:1.6}
-
+ 
 /* CTA COUNTDOWN */
 .countdown-section{position:relative;padding:4rem 1.25rem;overflow:hidden;background:#0F172A;display:flex;align-items:center;justify-content:center;min-height:70vh}
 .countdown-bg{position:absolute;inset:0;pointer-events:none}
@@ -604,7 +604,7 @@ const cssText = `
 .countdown-badge-dot{width:7px;height:7px;border-radius:50%;background:#22C55E;animation:pulse 2s infinite}
 .countdown-title{font-family:'Outfit',sans-serif;font-size:1.6rem;font-weight:700;color:#F8FAFC;letter-spacing:-.02em;margin-bottom:.75rem;line-height:1.2}
 .countdown-sub{color:#94A3B8;font-size:.92rem;line-height:1.65;max-width:480px;margin:0 auto 2rem}
-
+ 
 .countdown-timer{display:flex;align-items:flex-start;justify-content:center;gap:8px;margin-bottom:2.5rem}
 .countdown-unit{display:flex;flex-direction:column;align-items:center;gap:6px}
 .countdown-digit-box{background:rgba(30,41,59,.8);border:1px solid rgba(226,232,240,.1);border-radius:14px;padding:12px 14px;min-width:68px;position:relative;overflow:hidden}
@@ -612,19 +612,19 @@ const cssText = `
 .countdown-digit{font-family:'Outfit',sans-serif;font-size:2.2rem;font-weight:600;color:#F8FAFC;letter-spacing:-.02em;display:block;line-height:1.1}
 .countdown-label{font-size:.6rem;font-weight:600;text-transform:uppercase;letter-spacing:.15em;color:#64748B}
 .countdown-colon{font-family:'Outfit',sans-serif;font-size:1.8rem;font-weight:300;color:rgba(148,163,184,.4);padding-top:12px;animation:pulse 2s infinite}
-
+ 
 .countdown-ctas{display:flex;flex-direction:column;gap:12px;align-items:center}
 .countdown-btn-main{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:#1A56DB;color:#fff;border:none;padding:.85rem 2rem;border-radius:10px;font-weight:600;font-size:.95rem;cursor:pointer;font-family:'DM Sans',sans-serif;box-shadow:0 4px 20px rgba(26,86,219,.35);transition:all .25s ease;min-height:48px;width:100%}
 .countdown-btn-main:hover{transform:translateY(-2px);box-shadow:0 12px 32px rgba(26,86,219,.4);background:#2563EB}
 .countdown-btn-sec{color:#94A3B8;border-color:rgba(226,232,240,.12);display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:48px;background:transparent;font-size:.95rem}
 .countdown-btn-sec:hover{background:rgba(241,245,249,.05);color:#CBD5E1}
-
+ 
 /* CTA */
 .cta-banner{padding:3.5rem 1.25rem;background:#1A56DB;text-align:center}
 .cta-inner{max-width:600px;margin:0 auto}
 .cta-title{font-family:'Outfit';font-size:1.6rem;font-weight:700;margin-bottom:14px;color:#fff}
 .cta-sub{color:#BFDBFE;font-size:.95rem;margin-bottom:28px;line-height:1.6}
-
+ 
 /* BUILDER */
 .builder-section{padding:4rem 1.25rem 9rem;background:#F8FAFC}
 .builder-sub{color:#64748B;text-align:center;max-width:520px;margin:0 auto 2rem;font-size:.95rem;line-height:1.6}
@@ -638,7 +638,7 @@ const cssText = `
 .input:focus{outline:none;border-color:#1A56DB;box-shadow:0 0 0 3px #E0E7FF}
 .textarea{min-height:100px;resize:vertical}
 .file-input{cursor:pointer;border-style:dashed;background:#F8FAFC;color:#64748B}
-
+ 
 .feat-grid{display:grid;grid-template-columns:1fr;gap:8px}
 .feat-card{display:flex;align-items:center;gap:12px;padding:14px;border-radius:10px;cursor:pointer;background:#F8FAFC;border:1.5px solid #E2E8F0;transition:all .2s ease;min-height:48px;-webkit-user-select:none;user-select:none}
 .feat-card:hover{border-color:#1A56DB;background:#E0E7FF}
@@ -646,7 +646,7 @@ const cssText = `
 .feat-check{width:22px;height:22px;border-radius:6px;border:2px solid #CBD5E1;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s}
 .feat-check.checked{background:#1A56DB;border-color:#1A56DB}
 .feat-label{font-size:.9rem;color:#334155;font-weight:500}
-
+ 
 /* STICKY */
 .sticky-footer{position:fixed;bottom:0;left:0;right:0;background:rgba(255,255,255,.94);backdrop-filter:blur(16px);border-top:1px solid #E2E8F0;z-index:100;padding:.85rem 1.25rem;box-shadow:0 -4px 12px rgba(0,0,0,.04)}
 .sticky-inner{max-width:900px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;gap:1rem}
@@ -654,20 +654,20 @@ const cssText = `
 .sticky-count{font-size:1.5rem;font-weight:800;font-family:'Outfit';color:#1A56DB;background:#E0E7FF;width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center}
 .sticky-text{font-size:.85rem;color:#64748B;font-weight:500}
 .sticky-btn{width:auto!important;white-space:nowrap;padding:.75rem 1.5rem;font-size:.9rem}
-
+ 
 /* FOOTER */
 .footer{padding:2.5rem 1.25rem;border-top:1px solid #E2E8F0;background:#fff}
 .footer-content{max-width:1100px;margin:0 auto;text-align:center}
 .footer-tagline{color:#64748B;margin-top:8px;font-size:.85rem}
 .footer-copy{color:#94A3B8;margin-top:20px;font-size:.8rem;border-top:1px solid #E2E8F0;padding-top:20px}
-
+ 
 /* SUCCESS */
 .success-wrap{position:fixed;inset:0;background:rgba(248,250,252,.96);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px}
 .success-card{background:#fff;border-radius:20px;padding:2.5rem 1.5rem;max-width:420px;width:100%;text-align:center;border:1px solid #E2E8F0;box-shadow:0 20px 60px rgba(0,0,0,.08)}
 .success-check{width:60px;height:60px;border-radius:50%;background:#1A56DB;display:flex;align-items:center;justify-content:center;margin:0 auto 1.25rem}
 .success-title{font-family:'Outfit';font-size:1.5rem;font-weight:700;margin-bottom:10px;color:#0F172A}
 .success-text{color:#64748B;font-size:.95rem;line-height:1.6;margin-bottom:24px}
-
+ 
 /* ═══ TABLET 640px+ ═══ */
 @media(min-width:640px){
   .hero{padding:8rem 1.5rem 5rem}
@@ -690,7 +690,7 @@ const cssText = `
   .section{padding:5rem 1.5rem}
   .section-title{font-size:2rem}
 }
-
+ 
 /* ═══ DESKTOP 1024px+ ═══ */
 @media(min-width:1024px){
   .nav-links{display:flex!important;flex-direction:row;position:static;background:none;border:none;padding:0;gap:28px;box-shadow:none}
