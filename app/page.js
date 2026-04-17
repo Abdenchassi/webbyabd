@@ -46,6 +46,55 @@ const SERVICES = [
   { title: 'Payment Integration', desc: 'Whish, OMT, cards — invoices auto-generated.', icon: 'dollar' },
 ];
 
+/* ── Hosting Questions & Tier Mapping ── */
+const HOSTING_QS = [
+  { key: 'visitors', q: 'How many people will visit your site daily?', opts: [
+    { val: 'few', label: 'Just starting out (under 100/day)', emoji: '🌱' },
+    { val: 'hundreds', label: 'A few hundred per day', emoji: '📈' },
+    { val: 'thousands', label: 'Thousands per day', emoji: '🚀' },
+    { val: 'massive', label: 'Tens of thousands or more', emoji: '🏢' },
+  ]},
+  { key: 'accounts', q: 'Will customers create accounts on your site?', opts: [
+    { val: 'none', label: 'No, just a public website', emoji: '🌐' },
+    { val: 'some', label: 'Yes, up to a few hundred', emoji: '👥' },
+    { val: 'many', label: 'Yes, thousands of users', emoji: '🏟️' },
+  ]},
+  { key: 'content', q: 'How much content will you manage?', opts: [
+    { val: 'light', label: 'Simple site with a few pages', emoji: '📄' },
+    { val: 'medium', label: 'Dozens of products/items with photos', emoji: '🛍️' },
+    { val: 'heavy', label: 'Hundreds of products or large catalog', emoji: '🏬' },
+  ]},
+  { key: 'speed', q: 'Is it okay if the site takes a moment to load after being idle?', opts: [
+    { val: 'relaxed', label: "That's fine — I'm just starting", emoji: '😌' },
+    { val: 'always', label: 'No, it must always load instantly', emoji: '⚡' },
+  ]},
+];
+
+const HOSTING_TIERS = {
+  free:    { name: 'Launch',   color: '#64748B', clientPrice: 0,   render: { tier: 'Free',     price: 0,  ram: '512 MB', cpu: '0.1 vCPU', note: 'Sleeps after 15min idle' }, supabase: { tier: 'Free', price: 0,  db: '500 MB', mau: '50K', note: 'Pauses after 7 days idle' }},
+  starter: { name: 'Starter',  color: '#2563EB', clientPrice: 19,  render: { tier: 'Starter',  price: 7,  ram: '512 MB', cpu: '0.5 vCPU', note: 'Always on' },              supabase: { tier: 'Free', price: 0,  db: '500 MB', mau: '50K', note: 'Always active' }},
+  growth:  { name: 'Growth',   color: '#7C3AED', clientPrice: 79,  render: { tier: 'Standard', price: 25, ram: '2 GB',   cpu: '1 vCPU',   note: 'Always on, fast' },          supabase: { tier: 'Pro',  price: 25, db: '8 GB',   mau: '100K', note: 'Daily backups' }},
+  business:{ name: 'Business', color: '#059669', clientPrice: 149, render: { tier: 'Pro',      price: 85, ram: '4 GB',   cpu: '2 vCPU',   note: 'High performance' },        supabase: { tier: 'Pro',  price: 25, db: '8 GB',   mau: '100K', note: 'Daily backups' }},
+};
+
+function computeHostingTier(h) {
+  if (!h.visitors || !h.speed) return null;
+  if (h.speed === 'relaxed' && h.visitors === 'few' && h.content !== 'heavy') return 'free';
+  if (h.visitors === 'massive' || (h.visitors === 'thousands' && h.content === 'heavy')) return 'business';
+  if (h.visitors === 'thousands' || h.accounts === 'many' || h.content === 'heavy') return 'growth';
+  if (h.visitors === 'hundreds' || h.content === 'medium' || h.accounts === 'some') return 'starter';
+  return 'starter';
+}
+
+function getHostingDetails(tierKey) {
+  const t = HOSTING_TIERS[tierKey]; if (!t) return null;
+  const infraCost = t.render.price + t.supabase.price;
+  const renderWorkspace = 19;
+  const realCost = infraCost + renderWorkspace;
+  const profit = t.clientPrice - infraCost;
+  return { ...t, infraCost, renderWorkspace, realCost, profit, tierKey };
+}
+
 /* ── Icons ── */
 const I = ({ t, s = 22, c = 'currentColor' }) => {
   const p = { width: s, height: s, fill: 'none', stroke: c, strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round', viewBox: '0 0 24 24' };
@@ -77,6 +126,7 @@ export default function Home() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [countdown, setCountdown] = useState(null);
   const [activeCard, setActiveCard] = useState(0);
+  const [hosting, setHosting] = useState({});
   const builderRef = useRef(null);
   const fileRef = useRef(null);
   const canvasRef = useRef(null);
@@ -126,8 +176,18 @@ export default function Home() {
     if (!form.name || !form.contact || totalSel === 0) return; setSubmitting(true);
     const fl = []; CONTRACT_DATA.forEach((cat, i) => cat.items.forEach(it => { if (sel[i]?.[it.id]) fl.push(it.label); }));
     const files = fileRef.current?.files; let fn = ''; if (files?.length) fn = Array.from(files).map(f => f.name).join(', ');
+    const tierKey = computeHostingTier(hosting);
+    const hd = tierKey ? getHostingDetails(tierKey) : null;
+    const hostingData = hd ? {
+      tierKey, tierName: hd.name,
+      clientPrice: hd.clientPrice, infraCost: hd.infraCost,
+      renderWorkspace: hd.renderWorkspace, realCost: hd.realCost,
+      profit: hd.profit,
+      render: hd.render, supabase: hd.supabase,
+      answers: hosting,
+    } : null;
     try {
-      const res = await fetch('/api/leads', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ client_name: form.name.trim(), client_business: form.business.trim(), email_phone: form.contact.trim(), notes: form.notes.trim(), features: fl, estimateMin: estimate, estimateMax: estimate + 100, attached_files: fn }) });
+      const res = await fetch('/api/leads', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ client_name: form.name.trim(), client_business: form.business.trim(), email_phone: form.contact.trim(), notes: form.notes.trim(), features: fl, estimateMin: estimate, estimateMax: estimate + 100, attached_files: fn, hosting: hostingData }) });
       const data = await res.json(); if (data.success) setSubmitted(true); else alert('Error: ' + data.error);
     } catch { alert('Network error.'); } setSubmitting(false);
   };
@@ -196,6 +256,60 @@ export default function Home() {
     {showBuilder && (<section ref={builderRef} className="builder-section"><div className="section-inner"><div className="section-label">Project Builder</div><h2 className="section-title">Tell us what you need</h2><p className="builder-sub">Select every feature that applies. We&apos;ll review and send a tailored proposal.</p>
       <div className="builder-card"><h3 className="builder-card-title">Your Details</h3><div className="form-grid"><div className="input-group"><label className="input-label">Your Name *</label><input className="input" value={form.name} onChange={e=>setForm({...form,name:e.target.value})} placeholder="John Doe"/></div><div className="input-group"><label className="input-label">Business Name</label><input className="input" value={form.business} onChange={e=>setForm({...form,business:e.target.value})} placeholder="Dar el Sama"/></div></div><div className="input-group"><label className="input-label">Email or WhatsApp *</label><input className="input" value={form.contact} onChange={e=>setForm({...form,contact:e.target.value})} placeholder="+961 70 XXX XXX"/></div><div className="input-group"><label className="input-label">Upload Logo / Moodboard (Optional)</label><input type="file" ref={fileRef} multiple accept="image/*,.pdf" className="input file-input"/></div><div className="input-group"><label className="input-label">Additional Notes</label><textarea className="input textarea" value={form.notes} onChange={e=>setForm({...form,notes:e.target.value})} placeholder="Design style, deadline, reference sites..."/></div></div>
       {CONTRACT_DATA.map((cat,ci)=>(<div key={ci} className="builder-card"><h3 className="builder-card-title"><I t={['phone','cart','calendar','dollar','chart','wallet'][ci]} s={20} c="#1A56DB"/><span className="cat-name">{cat.category}</span></h3><div className="feat-grid">{cat.items.map(item=>{const on=sel[ci]?.[item.id];return(<div key={item.id} className={`feat-card ${on?'sel':''}`} onClick={()=>toggle(ci,item.id)}><div className={`feat-check ${on?'checked':''}`}>{on&&<svg width="12" height="12" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2 6l3 3 5-6"/></svg>}</div><span className="feat-label">{item.label}</span></div>);})}</div></div>))}
+
+      {/* HOSTING NEEDS */}
+      <div className="builder-card hosting-card">
+        <h3 className="builder-card-title"><I t="chart" s={20} c="#1A56DB"/><span className="cat-name">Hosting & Performance Needs</span></h3>
+        <p style={{color:'var(--muted)',fontSize:'.85rem',marginBottom:'1.25rem',lineHeight:1.6}}>Answer a few quick questions so we can recommend the right hosting plan for your business. This helps us give you an accurate monthly cost.</p>
+        {HOSTING_QS.map(q => (
+          <div key={q.key} className="hosting-q">
+            <label className="hosting-q-label">{q.q}</label>
+            <div className="hosting-opts">
+              {q.opts.map(o => (
+                <div key={o.val} className={`hosting-opt ${hosting[q.key]===o.val?'sel':''}`} onClick={()=>setHosting(p=>({...p,[q.key]:o.val}))}>
+                  <span className="hosting-emoji">{o.emoji}</span>
+                  <span className="hosting-opt-text">{o.label}</span>
+                  {hosting[q.key]===o.val && <div className="hosting-opt-check"><svg width="14" height="14" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg></div>}
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+
+        {/* Result — client sees simple monthly cost only */}
+        {(() => {
+          const tierKey = computeHostingTier(hosting);
+          if (!tierKey) return null;
+          const hd = getHostingDetails(tierKey);
+          const answered = HOSTING_QS.every(q => hosting[q.key]);
+          if (!answered) return null;
+          return (
+            <div className="hosting-result">
+              <div className="hosting-result-header">
+                <div className="hosting-result-badge" style={{background: hd.color}}>{hd.name} Plan</div>
+                <div className="hosting-result-price">
+                  <span className="hosting-price-amount">${hd.clientPrice}</span>
+                  <span className="hosting-price-period">/month</span>
+                </div>
+              </div>
+              <div className="hosting-result-desc">
+                {tierKey === 'free' && 'Perfect for testing your idea. Your site may take a few seconds to load after being idle — great for launching and validating your business.'}
+                {tierKey === 'starter' && "Your site stays online 24/7 with no delays. Ideal for a small business that's just getting started and building its customer base."}
+                {tierKey === 'growth' && 'Built for a growing business with real traffic. Fast performance, room for lots of products, and your customer data is backed up daily.'}
+                {tierKey === 'business' && 'High-performance hosting for serious traffic. Your site handles thousands of visitors smoothly with maximum speed and reliability.'}
+              </div>
+              <div className="hosting-result-includes">
+                <div className="hosting-inc-title">What&apos;s included:</div>
+                <div className="hosting-inc-item"><span className="hosting-inc-dot" style={{background:'#22c55e'}}/>Your website always online{tierKey !== 'free' ? ' — no delays' : ' (may sleep when idle)'}</div>
+                <div className="hosting-inc-item"><span className="hosting-inc-dot" style={{background:'#3b82f6'}}/>Database for your {hosting.content === 'heavy' ? 'large catalog' : hosting.content === 'medium' ? 'products & orders' : 'content'}</div>
+                <div className="hosting-inc-item"><span className="hosting-inc-dot" style={{background:'#8b5cf6'}}/>{hosting.accounts !== 'none' ? `User accounts for your ${hosting.accounts === 'many' ? 'thousands of' : 'hundreds of'} customers` : 'Public website — no login needed'}</div>
+                {tierKey !== 'free' && <div className="hosting-inc-item"><span className="hosting-inc-dot" style={{background:'#f59e0b'}}/>Automatic daily backups</div>}
+              </div>
+            </div>
+          );
+        })()}
+      </div>
+
     </div><div className="sticky-footer"><div className="sticky-inner"><div className="sticky-info"><div className="sticky-count">{totalSel}</div><div className="sticky-text">features selected</div></div><button className="btn-primary sticky-btn" disabled={submitting||totalSel===0||!form.name||!form.contact} onClick={handleSubmit}>{submitting?'Submitting...':'Submit Request'}</button></div></div></section>)}
 
     {/* CTA */}
@@ -227,8 +341,32 @@ button,a{min-height:48px}
 .cta-banner{padding:3.5rem 1.25rem;background:var(--blue);text-align:center}.cta-title{font-family:'Outfit';font-size:1.5rem;font-weight:800;margin-bottom:.6rem;color:#fff}.cta-sub{color:#BFDBFE;font-size:.9rem;margin-bottom:1.75rem;line-height:1.6}.cta-btn{background:#fff;color:var(--blue);border:none;padding:.85rem 2rem;border-radius:12px;font-weight:700;font-size:.95rem;cursor:pointer;font-family:'DM Sans';box-shadow:0 4px 20px rgba(0,0,0,.15);min-height:52px;width:100%;max-width:320px}.cta-btn:hover{transform:translateY(-2px)}.cta-btn:active{transform:scale(.97)}
 .footer{padding:2rem 1.25rem;border-top:1px solid var(--border);background:var(--surface);text-align:center}.footer-tag{color:var(--muted);font-size:.82rem;margin-top:8px}.footer-copy{color:#94A3B8;margin-top:16px;font-size:.75rem;border-top:1px solid var(--border);padding-top:16px}
 .success-wrap{position:fixed;inset:0;background:rgba(248,250,252,.96);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px}.success-card{background:var(--card);border-radius:20px;padding:2.5rem 1.5rem;max-width:420px;width:100%;text-align:center;border:1px solid var(--border);box-shadow:0 20px 60px rgba(0,0,0,.08)}.success-check{width:60px;height:60px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;margin:0 auto 1.25rem}.success-title{font-family:'Outfit';font-size:1.5rem;font-weight:700;margin-bottom:10px}.success-text{color:var(--muted);font-size:.95rem;line-height:1.6;margin-bottom:24px}
+/* HOSTING QUESTIONNAIRE */
+.hosting-card{border:2px solid rgba(26,86,219,.12);background:linear-gradient(180deg,#FAFBFF,#fff)}
+.hosting-q{margin-bottom:1.5rem}
+.hosting-q-label{display:block;font-family:'Outfit';font-size:.92rem;font-weight:600;color:var(--text);margin-bottom:.75rem}
+.hosting-opts{display:grid;grid-template-columns:1fr;gap:8px}
+.hosting-opt{display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:12px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;transition:all .2s;min-height:48px;position:relative;-webkit-user-select:none;user-select:none}
+.hosting-opt:hover{border-color:rgba(26,86,219,.3);background:rgba(26,86,219,.03)}
+.hosting-opt.sel{border-color:var(--blue);background:var(--blue-light);box-shadow:0 0 0 1px var(--blue)}
+.hosting-emoji{font-size:1.2rem;flex-shrink:0;width:28px;text-align:center}
+.hosting-opt-text{font-size:.88rem;color:var(--text2);font-weight:500;flex:1}
+.hosting-opt.sel .hosting-opt-text{color:var(--text);font-weight:600}
+.hosting-opt-check{width:22px;height:22px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.hosting-result{margin-top:1.5rem;padding:1.5rem;border-radius:16px;background:linear-gradient(135deg,rgba(26,86,219,.04),rgba(99,102,241,.04));border:1.5px solid rgba(26,86,219,.15);animation:fadeUp .5s ease}
+.hosting-result-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:10px}
+.hosting-result-badge{color:#fff;padding:.35rem 1rem;border-radius:100px;font-family:'Outfit';font-size:.8rem;font-weight:700;letter-spacing:.02em}
+.hosting-result-price{display:flex;align-items:baseline;gap:2px}
+.hosting-price-amount{font-family:'Outfit';font-size:2rem;font-weight:800;color:var(--blue)}
+.hosting-price-period{font-size:.85rem;color:var(--muted);font-weight:500}
+.hosting-result-desc{color:var(--text2);font-size:.88rem;line-height:1.6;margin-bottom:1.25rem}
+.hosting-result-includes{padding-top:1rem;border-top:1px solid rgba(26,86,219,.1)}
+.hosting-inc-title{font-family:'Outfit';font-size:.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.75rem}
+.hosting-inc-item{display:flex;align-items:center;gap:10px;font-size:.85rem;color:var(--text2);padding:.4rem 0;font-weight:500}
+.hosting-inc-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+
 @keyframes fadeUp{from{opacity:0;transform:translateY(20px);filter:blur(3px)}to{opacity:1;transform:translateY(0);filter:blur(0)}}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-@media(min-width:640px){.hero-title{font-size:2.8rem}.hero-ctas{flex-direction:row}.btn-primary,.btn-ghost{width:auto}.hero-values{flex-direction:row;justify-content:center;gap:2rem}.serv-grid{grid-template-columns:repeat(2,1fr)}.section-title{font-size:2.2rem}.form-grid{grid-template-columns:1fr 1fr;gap:14px}.feat-grid{grid-template-columns:repeat(2,1fr);gap:10px}.cd-title{font-size:1.8rem}.cd-box{min-width:80px;padding:14px 18px}.cd-digit{font-size:2.2rem}.steps-grid{grid-template-columns:repeat(2,1fr)}.step-line{display:none}.scroll-section{height:75rem}}
+@media(min-width:640px){.hero-title{font-size:2.8rem}.hero-ctas{flex-direction:row}.btn-primary,.btn-ghost{width:auto}.hero-values{flex-direction:row;justify-content:center;gap:2rem}.serv-grid{grid-template-columns:repeat(2,1fr)}.section-title{font-size:2.2rem}.form-grid{grid-template-columns:1fr 1fr;gap:14px}.feat-grid{grid-template-columns:repeat(2,1fr);gap:10px}.cd-title{font-size:1.8rem}.cd-box{min-width:80px;padding:14px 18px}.cd-digit{font-size:2.2rem}.steps-grid{grid-template-columns:repeat(2,1fr)}.step-line{display:none}.scroll-section{height:75rem}.hosting-opts{grid-template-columns:repeat(2,1fr)}}
 @media(min-width:1024px){.nav-inner{padding:.85rem 1.5rem}.nav-links{display:flex!important;flex-direction:row;position:static;background:none;border:none;padding:0;gap:0;box-shadow:none}.nav-link{padding:.4rem .8rem;font-size:.88rem}.nav-cta{width:auto;margin-top:0}.hamburger{display:none!important}.hero{padding:10rem 2rem 6rem}.hero-title{font-size:3.8rem}.section{padding:6rem 2rem}.section-title{font-size:2.6rem}.serv-grid{grid-template-columns:repeat(3,1fr)}.serv-card{padding:26px;flex-direction:column}.scroll-section{height:80rem}.tablet{border-width:5px;padding:8px;border-radius:28px}.tablet-screen{border-radius:20px}.steps-grid{grid-template-columns:repeat(4,1fr)}.builder-card{padding:28px}.builder-card-title{font-size:1.15rem}.feat-grid{grid-template-columns:repeat(3,1fr)}.sticky-btn{padding:.85rem 2rem!important;font-size:1rem!important}.cta-banner{padding:5rem 2rem}.cta-title{font-size:2rem}.cta-btn{width:auto}.countdown-inner{padding:3.5rem 2.5rem}.cd-title{font-size:2.2rem}}
 `;
