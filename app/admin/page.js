@@ -142,6 +142,91 @@ export default function AdminPage() {
             </div>
           )}
 
+          {/* HOSTING TECHNICAL BREAKDOWN — ADMIN ONLY */}
+          {lead.hosting && (
+            <div style={{ padding: '1rem', background: '#F0F4FF', borderRadius: 12, border: '1px solid #C7D2FE', marginBottom: '1rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '.75rem', flexWrap: 'wrap', gap: 8 }}>
+                <h4 style={{ fontFamily: "'Outfit'", fontSize: '.95rem', fontWeight: 700, color: '#1A56DB', margin: 0 }}>
+                  🖥️ Hosting: {lead.hosting.tierName} Plan
+                </h4>
+                <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+                  <div style={{ background: '#1A56DB', color: '#fff', padding: '4px 10px', borderRadius: 100, fontFamily: "'Outfit'", fontWeight: 700, fontSize: '.8rem' }}>
+                    Client pays: ${lead.hosting.clientPrice}/mo
+                  </div>
+                  <div style={{ background: '#059669', color: '#fff', padding: '4px 10px', borderRadius: 100, fontFamily: "'Outfit'", fontWeight: 700, fontSize: '.8rem' }}>
+                    Profit: ${lead.hosting.profit}/mo
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+                {/* Render Compute */}
+                <div style={{ padding: '.75rem', background: '#fff', borderRadius: 8, border: '1px solid #E2E8F0' }}>
+                  <div style={{ fontSize: '.65rem', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 6 }}>Render Compute</div>
+                  <div style={{ fontSize: '.85rem', fontWeight: 700, color: '#0F172A' }}>${lead.hosting.render.price}/mo</div>
+                  <div style={{ fontSize: '.75rem', color: '#64748B', marginTop: 4 }}>
+                    {lead.hosting.render.tier}<br/>
+                    CPU: {lead.hosting.render.cpu}<br/>
+                    RAM: {lead.hosting.render.ram}
+                  </div>
+                  <div style={{ color: '#94A3B8', fontSize: '.68rem', marginTop: 4 }}>{lead.hosting.render.note}</div>
+                </div>
+                {/* Render Workspace */}
+                <div style={{ padding: '.75rem', background: '#fff', borderRadius: 8, border: '1px solid #E2E8F0' }}>
+                  <div style={{ fontSize: '.65rem', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 6 }}>Render Workspace</div>
+                  <div style={{ fontSize: '.85rem', fontWeight: 700, color: '#0F172A' }}>${lead.hosting.renderWorkspace || 19}/mo</div>
+                  <div style={{ fontSize: '.75rem', color: '#64748B', marginTop: 4 }}>
+                    Professional Plan<br/>
+                    Unlimited envs<br/>
+                    Autoscaling
+                  </div>
+                  <div style={{ color: '#94A3B8', fontSize: '.68rem', marginTop: 4 }}>Fixed monthly cost</div>
+                </div>
+                {/* Supabase */}
+                <div style={{ padding: '.75rem', background: '#fff', borderRadius: 8, border: '1px solid #E2E8F0' }}>
+                  <div style={{ fontSize: '.65rem', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 6 }}>Supabase DB</div>
+                  <div style={{ fontSize: '.85rem', fontWeight: 700, color: '#0F172A' }}>${lead.hosting.supabase.price}/mo</div>
+                  <div style={{ fontSize: '.75rem', color: '#64748B', marginTop: 4 }}>
+                    {lead.hosting.supabase.tier}<br/>
+                    DB: {lead.hosting.supabase.db}<br/>
+                    MAU: {lead.hosting.supabase.mau}
+                  </div>
+                  <div style={{ color: '#94A3B8', fontSize: '.68rem', marginTop: 4 }}>{lead.hosting.supabase.note}</div>
+                </div>
+              </div>
+
+              {/* Profit summary */}
+              <div style={{ marginTop: 10, padding: '.75rem', background: '#fff', borderRadius: 8, border: '1px solid #E2E8F0' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 8, textAlign: 'center' }}>
+                  <div>
+                    <div style={{ fontSize: '.65rem', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '.06em' }}>Client pays</div>
+                    <div style={{ fontFamily: "'Outfit'", fontWeight: 800, fontSize: '1.1rem', color: '#1A56DB' }}>${lead.hosting.clientPrice}</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '.65rem', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '.06em' }}>Infra cost</div>
+                    <div style={{ fontFamily: "'Outfit'", fontWeight: 800, fontSize: '1.1rem', color: '#DC2626' }}>-${lead.hosting.infraCost}</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '.65rem', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '.06em' }}>Workspace</div>
+                    <div style={{ fontFamily: "'Outfit'", fontWeight: 800, fontSize: '1.1rem', color: '#DC2626' }}>-$19</div>
+                  </div>
+                  <div style={{ background: '#F0FDF4', borderRadius: 6, padding: '4px' }}>
+                    <div style={{ fontSize: '.65rem', fontWeight: 700, color: '#059669', textTransform: 'uppercase', letterSpacing: '.06em' }}>Profit/mo</div>
+                    <div style={{ fontFamily: "'Outfit'", fontWeight: 800, fontSize: '1.1rem', color: '#059669' }}>+${lead.hosting.profit}</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Client's answers */}
+              {lead.hosting.answers && (
+                <div style={{ marginTop: 8, padding: '.5rem .75rem', background: 'rgba(255,255,255,.5)', borderRadius: 6, fontSize: '.72rem', color: '#64748B' }}>
+                  <strong style={{ color: '#334155' }}>Client answers:</strong>{' '}
+                  Visitors: {lead.hosting.answers.visitors} · Accounts: {lead.hosting.answers.accounts} · Content: {lead.hosting.answers.content} · Speed: {lead.hosting.answers.speed}
+                </div>
+              )}
+            </div>
+          )}
+
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             {lead.status === 'new' && <button style={st.btnP} onClick={() => updateStatus(lead.id, 'contacted')}>Mark Contacted</button>}
             {lead.status === 'contacted' && <button style={{ ...st.btnP, background: '#047857' }} onClick={() => updateStatus(lead.id, 'signed')}>Mark Signed</button>}
