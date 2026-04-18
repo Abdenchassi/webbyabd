@@ -7,6 +7,9 @@ export default function AdminPage() {
   const [loggedIn, setLoggedIn] = useState(false);
   const [leads, setLeads] = useState([]);
   const [filter, setFilter] = useState('all');
+  const [expandedId, setExpandedId] = useState(null);
+  const [pastedJson, setPastedJson] = useState('');
+  const [copied, setCopied] = useState(false);
 
   const loadData = useCallback(async () => {
     const k = localStorage.getItem('webby_key') || key;
@@ -48,6 +51,89 @@ export default function AdminPage() {
     const k = localStorage.getItem('webby_key');
     await fetch(`/api/admin/leads/${id}`, { method: 'DELETE', headers: { 'x-admin-key': k } });
     loadData();
+  };
+
+  const updatePlanStatus = async (id, plan_status) => {
+    const k = localStorage.getItem('webby_key');
+    await fetch(`/api/admin/leads/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json', 'x-admin-key': k }, body: JSON.stringify({ plan_status }) });
+    loadData();
+  };
+
+  const buildPrompt = (lead) => {
+    return `You are a web development project planner for WebbyAbd, a mobile-first web studio in Lebanon.
+
+A client just submitted a project request. Generate a clear, actionable project plan based on their info.
+
+CLIENT INFO:
+- Name: ${lead.client_name}
+- Business: ${lead.client_business || 'Not specified'}
+- Contact: ${lead.email_phone}
+- Notes: ${lead.notes || 'None'}
+- Uploaded files: ${lead.attached_files || 'None'}
+
+REQUESTED FEATURES:
+${(lead.features || []).map(f => `- ${f}`).join('\n')}
+
+HOSTING TIER: ${lead.hosting?.tierName || 'Not selected'}
+- Render: ${lead.hosting?.render?.tier || 'TBD'} (${lead.hosting?.render?.ram || 'TBD'} RAM, ${lead.hosting?.render?.cpu || 'TBD'})
+- Supabase: ${lead.hosting?.supabase?.tier || 'TBD'} (${lead.hosting?.supabase?.db || 'TBD'} DB)
+- Client expects: ${lead.hosting?.answers?.visitors || 'TBD'} daily visitors, ${lead.hosting?.answers?.content || 'TBD'} content volume
+
+BUDGET ESTIMATE: $${lead.estimateMin || '?'} - $${lead.estimateMax || '?'} (one-time build cost)
+MONTHLY HOSTING: $${lead.hosting?.clientPrice || '0'}/mo (what client pays)
+
+Generate a JSON response with this exact structure (no markdown, no backticks, just raw JSON):
+{
+  "summary": "2-3 sentence project overview",
+  "pages": ["list of pages/screens to build"],
+  "techStack": {
+    "frontend": "framework and key libraries",
+    "backend": "API approach",
+    "database": "tables and schema overview",
+    "hosting": "deployment plan"
+  },
+  "timeline": {
+    "day1": "what gets done on day 1",
+    "day2": "what gets done on day 2",
+    "delivery": "final delivery details"
+  },
+  "risks": ["potential challenges or things to clarify with client"],
+  "questions": ["questions to ask the client before starting"],
+  "priority": "high | medium | low based on project complexity and revenue potential"
+}`;
+  };
+
+  const copyPrompt = async (lead) => {
+    const prompt = buildPrompt(lead);
+    try {
+      await navigator.clipboard.writeText(prompt);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch { alert('Could not copy. Please select and copy manually.'); }
+  };
+
+  const savePlan = async (id) => {
+    let parsed;
+    try {
+      const cleaned = pastedJson.replace(/```json|```/g, '').trim();
+      parsed = JSON.parse(cleaned);
+    } catch {
+      alert('Invalid JSON. Please paste the raw JSON response from Claude.');
+      return;
+    }
+    const k = localStorage.getItem('webby_key');
+    const res = await fetch(`/api/admin/leads/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'x-admin-key': k },
+      body: JSON.stringify({ plan: parsed, plan_status: 'pending_approval' }),
+    });
+    if (res.ok) {
+      setPastedJson('');
+      setExpandedId(null);
+      loadData();
+    } else {
+      alert('Failed to save plan.');
+    }
   };
 
   const st = {
@@ -222,6 +308,130 @@ export default function AdminPage() {
                 <div style={{ marginTop: 8, padding: '.5rem .75rem', background: 'rgba(255,255,255,.5)', borderRadius: 6, fontSize: '.72rem', color: '#64748B' }}>
                   <strong style={{ color: '#334155' }}>Client answers:</strong>{' '}
                   Visitors: {lead.hosting.answers.visitors} · Accounts: {lead.hosting.answers.accounts} · Content: {lead.hosting.answers.content} · Speed: {lead.hosting.answers.speed}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* CLAUDE-GENERATED PROJECT PLAN */}
+          {lead.plan && (
+            <div style={{ padding: '1rem', background: lead.plan_status === 'approved' ? '#F0FDF4' : lead.plan_status === 'rejected' ? '#FEF2F2' : '#FFFBEB', borderRadius: 12, border: `1px solid ${lead.plan_status === 'approved' ? '#86EFAC' : lead.plan_status === 'rejected' ? '#FECACA' : '#FDE68A'}`, marginBottom: '1rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '.75rem', flexWrap: 'wrap', gap: 8 }}>
+                <h4 style={{ fontFamily: "'Outfit'", fontSize: '.95rem', fontWeight: 700, color: '#0F172A', margin: 0 }}>
+                  AI Project Plan
+                </h4>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  {lead.plan_status === 'approved' && <span style={{ background: '#059669', color: '#fff', padding: '3px 10px', borderRadius: 100, fontSize: '.72rem', fontWeight: 700 }}>APPROVED</span>}
+                  {lead.plan_status === 'rejected' && <span style={{ background: '#DC2626', color: '#fff', padding: '3px 10px', borderRadius: 100, fontSize: '.72rem', fontWeight: 700 }}>REJECTED</span>}
+                  {lead.plan_status === 'pending_approval' && <span style={{ background: '#D97706', color: '#fff', padding: '3px 10px', borderRadius: 100, fontSize: '.72rem', fontWeight: 700 }}>AWAITING APPROVAL</span>}
+                  {lead.plan.priority && <span style={{ background: lead.plan.priority === 'high' ? '#7C3AED' : lead.plan.priority === 'medium' ? '#2563EB' : '#64748B', color: '#fff', padding: '3px 10px', borderRadius: 100, fontSize: '.72rem', fontWeight: 700 }}>{lead.plan.priority.toUpperCase()}</span>}
+                </div>
+              </div>
+
+              {/* Summary */}
+              <div style={{ padding: '.75rem', background: '#fff', borderRadius: 8, border: '1px solid #E2E8F0', marginBottom: 8 }}>
+                <div style={{ fontSize: '.72rem', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 4 }}>Summary</div>
+                <p style={{ fontSize: '.85rem', color: '#334155', lineHeight: 1.6 }}>{lead.plan.summary}</p>
+              </div>
+
+              {/* Pages & Timeline side by side */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
+                <div style={{ padding: '.75rem', background: '#fff', borderRadius: 8, border: '1px solid #E2E8F0' }}>
+                  <div style={{ fontSize: '.72rem', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 6 }}>Pages to Build</div>
+                  {(lead.plan.pages || []).map((p, i) => (
+                    <div key={i} style={{ fontSize: '.78rem', color: '#334155', padding: '3px 0', display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span style={{ width: 4, height: 4, borderRadius: 2, background: '#1A56DB', flexShrink: 0 }} />{p}
+                    </div>
+                  ))}
+                </div>
+                <div style={{ padding: '.75rem', background: '#fff', borderRadius: 8, border: '1px solid #E2E8F0' }}>
+                  <div style={{ fontSize: '.72rem', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 6 }}>Timeline</div>
+                  {lead.plan.timeline && Object.entries(lead.plan.timeline).map(([k, v]) => (
+                    <div key={k} style={{ fontSize: '.78rem', padding: '3px 0' }}>
+                      <strong style={{ color: '#1A56DB', textTransform: 'capitalize' }}>{k}:</strong>{' '}
+                      <span style={{ color: '#334155' }}>{v}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Tech Stack */}
+              {lead.plan.techStack && (
+                <div style={{ padding: '.75rem', background: '#fff', borderRadius: 8, border: '1px solid #E2E8F0', marginBottom: 8 }}>
+                  <div style={{ fontSize: '.72rem', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 6 }}>Tech Stack</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4 }}>
+                    {Object.entries(lead.plan.techStack).map(([k, v]) => (
+                      <div key={k} style={{ fontSize: '.78rem', padding: '2px 0' }}>
+                        <strong style={{ color: '#64748B', textTransform: 'capitalize' }}>{k}:</strong>{' '}
+                        <span style={{ color: '#334155' }}>{v}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Risks & Questions */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
+                {lead.plan.risks && lead.plan.risks.length > 0 && (
+                  <div style={{ padding: '.75rem', background: '#FFF7ED', borderRadius: 8, border: '1px solid #FED7AA' }}>
+                    <div style={{ fontSize: '.72rem', fontWeight: 700, color: '#C2410C', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 6 }}>Risks</div>
+                    {lead.plan.risks.map((r, i) => <div key={i} style={{ fontSize: '.78rem', color: '#9A3412', padding: '2px 0' }}>- {r}</div>)}
+                  </div>
+                )}
+                {lead.plan.questions && lead.plan.questions.length > 0 && (
+                  <div style={{ padding: '.75rem', background: '#EFF6FF', borderRadius: 8, border: '1px solid #BFDBFE' }}>
+                    <div style={{ fontSize: '.72rem', fontWeight: 700, color: '#1D4ED8', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 6 }}>Questions for Client</div>
+                    {lead.plan.questions.map((q, i) => <div key={i} style={{ fontSize: '.78rem', color: '#1E40AF', padding: '2px 0' }}>- {q}</div>)}
+                  </div>
+                )}
+              </div>
+
+              {/* Approve / Reject buttons */}
+              {lead.plan_status === 'pending_approval' && (
+                <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+                  <button style={{ ...st.btnP, background: '#059669', flex: 1 }} onClick={() => { updatePlanStatus(lead.id, 'approved'); updateStatus(lead.id, 'contacted'); }}>Approve Plan</button>
+                  <button style={{ ...st.btnO, flex: 1, color: '#DC2626', borderColor: '#FECACA' }} onClick={() => updatePlanStatus(lead.id, 'rejected')}>Reject Plan</button>
+                </div>
+              )}
+              {lead.plan_status === 'approved' && <div style={{ fontSize: '.78rem', color: '#059669', fontWeight: 600, marginTop: 4 }}>Plan approved — ready to start building.</div>}
+              {lead.plan_status === 'rejected' && <div style={{ fontSize: '.78rem', color: '#DC2626', fontWeight: 600, marginTop: 4 }}>Plan rejected — review and resubmit manually.</div>}
+            </div>
+          )}
+          {!lead.plan && (lead.plan_status === 'not_generated' || lead.plan_status === 'no_plan' || !lead.plan_status) && (
+            <div style={{ padding: '1rem', background: '#FAFBFF', borderRadius: 12, border: '1.5px dashed #C7D2FE', marginBottom: '1rem' }}>
+              {expandedId !== lead.id ? (
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: '.88rem', color: '#334155', fontWeight: 600, marginBottom: 4 }}>No AI plan yet</div>
+                  <div style={{ fontSize: '.78rem', color: '#64748B', marginBottom: 12 }}>Copy the prompt, paste into claude.ai, then paste Claude&apos;s response back here</div>
+                  <button style={{ ...st.btnP, background: '#7C3AED' }} onClick={() => { setExpandedId(lead.id); setPastedJson(''); }}>
+                    Add AI Plan
+                  </button>
+                </div>
+              ) : (
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, flexWrap: 'wrap', gap: 6 }}>
+                    <strong style={{ fontSize: '.85rem', color: '#0F172A' }}>Step 1: Copy prompt → paste in claude.ai</strong>
+                    <button
+                      style={{ ...st.btnO, background: copied ? '#D1FAE5' : '#fff', color: copied ? '#047857' : '#334155', borderColor: copied ? '#6EE7B7' : '#E2E8F0' }}
+                      onClick={() => copyPrompt(lead)}
+                    >
+                      {copied ? 'Copied!' : 'Copy Prompt'}
+                    </button>
+                  </div>
+                  <pre style={{ background: '#0F172A', color: '#CBD5E1', padding: '10px 12px', borderRadius: 8, fontSize: '.72rem', maxHeight: 140, overflow: 'auto', whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontFamily: 'ui-monospace, SFMono-Regular, monospace', marginBottom: 12 }}>
+                    {buildPrompt(lead)}
+                  </pre>
+                  <strong style={{ fontSize: '.85rem', color: '#0F172A', display: 'block', marginBottom: 6 }}>Step 2: Paste Claude&apos;s JSON response below</strong>
+                  <textarea
+                    value={pastedJson}
+                    onChange={(e) => setPastedJson(e.target.value)}
+                    placeholder='{"summary": "...", "pages": [...], ...}'
+                    style={{ width: '100%', minHeight: 120, padding: 10, borderRadius: 8, border: '1.5px solid #E2E8F0', fontFamily: 'ui-monospace, SFMono-Regular, monospace', fontSize: '.8rem', resize: 'vertical', marginBottom: 10, background: '#fff' }}
+                  />
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    <button style={{ ...st.btnP, background: '#7C3AED', flex: 1 }} onClick={() => savePlan(lead.id)} disabled={!pastedJson.trim()}>Save Plan</button>
+                    <button style={st.btnO} onClick={() => { setExpandedId(null); setPastedJson(''); }}>Cancel</button>
+                  </div>
                 </div>
               )}
             </div>
