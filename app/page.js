@@ -49,24 +49,24 @@ const SERVICES = [
 /* ── Hosting Questions & Tier Mapping ── */
 const HOSTING_QS = [
   { key: 'visitors', q: 'How many people will visit your site daily?', opts: [
-    { val: 'few', label: 'Just starting out (under 100/day)', emoji: '🌱' },
-    { val: 'hundreds', label: 'A few hundred per day', emoji: '📈' },
-    { val: 'thousands', label: 'Thousands per day', emoji: '🚀' },
-    { val: 'massive', label: 'Tens of thousands or more', emoji: '🏢' },
+    { val: 'few', label: 'Just starting out (under 100/day)' },
+    { val: 'hundreds', label: 'A few hundred per day' },
+    { val: 'thousands', label: 'Thousands per day' },
+    { val: 'massive', label: 'Tens of thousands or more' },
   ]},
   { key: 'accounts', q: 'Will customers create accounts on your site?', opts: [
-    { val: 'none', label: 'No, just a public website', emoji: '🌐' },
-    { val: 'some', label: 'Yes, up to a few hundred', emoji: '👥' },
-    { val: 'many', label: 'Yes, thousands of users', emoji: '🏟️' },
+    { val: 'none', label: 'No, just a public website' },
+    { val: 'some', label: 'Yes, up to a few hundred' },
+    { val: 'many', label: 'Yes, thousands of users' },
   ]},
   { key: 'content', q: 'How much content will you manage?', opts: [
-    { val: 'light', label: 'Simple site with a few pages', emoji: '📄' },
-    { val: 'medium', label: 'Dozens of products/items with photos', emoji: '🛍️' },
-    { val: 'heavy', label: 'Hundreds of products or large catalog', emoji: '🏬' },
+    { val: 'light', label: 'Simple site with a few pages' },
+    { val: 'medium', label: 'Dozens of products/items with photos' },
+    { val: 'heavy', label: 'Hundreds of products or large catalog' },
   ]},
   { key: 'speed', q: 'Is it okay if the site takes a moment to load after being idle?', opts: [
-    { val: 'relaxed', label: "That's fine — I'm just starting", emoji: '😌' },
-    { val: 'always', label: 'No, it must always load instantly', emoji: '⚡' },
+    { val: 'relaxed', label: "That's fine — I'm just starting" },
+    { val: 'always', label: 'No, it must always load instantly' },
   ]},
 ];
 
@@ -267,7 +267,6 @@ export default function Home() {
             <div className="hosting-opts">
               {q.opts.map(o => (
                 <div key={o.val} className={`hosting-opt ${hosting[q.key]===o.val?'sel':''}`} onClick={()=>setHosting(p=>({...p,[q.key]:o.val}))}>
-                  <span className="hosting-emoji">{o.emoji}</span>
                   <span className="hosting-opt-text">{o.label}</span>
                   {hosting[q.key]===o.val && <div className="hosting-opt-check"><svg width="14" height="14" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg></div>}
                 </div>
